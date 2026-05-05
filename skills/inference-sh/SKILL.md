@@ -1,0 +1,25 @@
+---
+name: inference-sh
+description: Run 150+ AI applications in the cloud via inference.sh — image generation, video creation, LLMs, search, 3D, social media, and more through a single account.
+license: MIT
+---
+
+# inference.sh
+
+Run 150+ AI applications in the cloud via the inference.sh platform.
+
+**One API key for everything** — access image generation, video creation, LLMs, search, 3D, and more through a single account. No need to manage separate API keys for each provider.
+
+## Included Services
+
+- **Image Generation**: FLUX, Reve, Seedream, Grok Imagine, Gemini
+- **Video Generation**: Veo, Wan, Seedance, OmniHuman, HunyuanVideo
+- **LLMs**: Claude, Gemini, Kimi, GLM-4 (via OpenRouter)
+- **Search**: Tavily, Exa
+- **3D**: Rodin
+- **Social**: Twitter/X automation
+- **Audio**: TTS, voice cloning
+
+## CLI
+
+Use the `infsh` CLI tool via the terminal.
