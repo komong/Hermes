@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kali Linux 安装 Hermes Agent + Web UI 完整教程</title>
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --surface: #ffffff;
+      --surface2: #f1f3f5;
+      --border: #dee2e6;
+      --border2: #ced4da;
+      --text: #212529;
+      --text2: #495057;
+      --muted: #868e96;
+      --accent: #1971c2;
+      --accent-light: #e7f5ff;
+      --green: #2f9e44;
+      --green-light: #ebfbee;
+      --orange: #e67700;
+      --orange-light: #fff4e6;
+      --red: #c92a2a;
+      --red-light: #fff5f5;
+      --purple: #7048e8;
+      --purple-light: #f3f0ff;
+      --cyan: #0891b2;
+      --cyan-light: #e5fafb;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* Header */
+    .site-header {
+      background: linear-gradient(135deg, #ffffff 0%, #f1f3f5 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 60px 20px 50px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .site-header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(25,113,194,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .site-header h1 {
+      font-size: 2em;
+      font-weight: 700;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #1971c2, #7048e8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      position: relative;
+    }
+    .site-header p { color: var(--muted); font-size: 0.95em; position: relative; }
+    .badge-row {
+      display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+      margin-top: 16px; position: relative;
+    }
+    .badge {
+      background: var(--surface2); border: 1px solid var(--border);
+      padding: 4px 12px; border-radius: 20px; font-size: 0.8em; color: var(--text2);
+    }
+
+    /* TOC */
+    .toc {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,0.95); border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(8px);
+    }
+    .toc-inner {
+      display: flex; gap: 4px; overflow-x: auto; padding: 10px 20px;
+      max-width: 1200px; margin: 0 auto; scrollbar-width: none;
+    }
+    .toc-inner::-webkit-scrollbar { display: none; }
+    .toc a {
+      white-space: nowrap; padding: 5px 12px; border-radius: 6px;
+      font-size: 0.82em; color: var(--muted); border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+    .toc a:hover { color: var(--text); background: var(--surface2); border-color: var(--border); text-decoration: none; }
+    .toc a.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+
+    /* Container */
+    .container { max-width: 900px; margin: 0 auto; padding: 40px 20px 80px; }
+
+    /* Sections */
+    section { margin-bottom: 50px; }
+    section h2 {
+      display: flex; align-items: center; gap: 12px;
+      font-size: 1.4em; margin-bottom: 6px; padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: rgba(25,113,194,0.08); border: 1px solid rgba(25,113,194,0.2);
+      font-size: 0.8em; color: var(--accent); flex-shrink: 0;
+    }
+    .section-desc { color: var(--muted); margin-bottom: 20px; font-size: 0.9em; }
+
+    /* Steps */
+    .step { margin-bottom: 8px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .step-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; cursor: pointer;
+      background: var(--surface2); user-select: none;
+      transition: background 0.15s;
+    }
+    .step-header:hover { background: #e9ecef; }
+    .step-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; border-radius: 50%;
+      background: rgba(25,113,194,0.1); color: var(--accent);
+      font-size: 0.75em; flex-shrink: 0;
+    }
+    .step-header .arrow { margin-left: auto; font-size: 0.7em; color: var(--muted); transition: transform 0.2s; }
+    .step-body {
+      display: none; padding: 16px 20px;
+      background: var(--surface); border-top: 1px solid var(--border);
+      animation: fadeIn 0.2s ease;
+    }
+    .step-body.open { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+    /* Code */
+    pre {
+      background: #f8f9fa; border: 1px solid var(--border);
+      border-radius: 6px; padding: 14px 16px;
+      overflow-x: auto; font-size: 0.88em; line-height: 1.6;
+      margin: 10px 0; position: relative;
+    }
+    code { font-family: inherit; font-size: 0.88em; }
+    .prompt { color: #2f9e44; }
+    .cmd { color: var(--text); }
+    .output { color: #0891b2; }
+    .comment { color: var(--muted); font-style: italic; }
+    .highlight { color: var(--orange); }
+    .string { color: #2f9e44; }
+    .keyword { color: #7048e8; }
+    .number { color: var(--orange); }
+    .copy-btn {
+      position: absolute; top: 8px; right: 8px;
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--muted); padding: 3px 10px; border-radius: 4px;
+      font-size: 0.75em; cursor: pointer; transition: all 0.15s;
+    }
+    .copy-btn:hover { background: var(--border); color: var(--text); }
+
+    /* Tables */
+    table {
+      width: 100%; border-collapse: collapse; margin: 10px 0;
+      font-size: 0.88em;
+    }
+    th { background: var(--surface2); padding: 10px 12px; text-align: left; border: 1px solid var(--border); color: var(--accent); }
+    td { padding: 10px 12px; border: 1px solid var(--border); }
+    tr:hover td { background: #f8f9fa; }
+
+    /* Info boxes */
+    .info-box {
+      display: flex; gap: 12px; padding: 12px 16px;
+      border-radius: 8px; margin: 12px 0; font-size: 0.88em;
+    }
+    .info-box.info { background: var(--accent-light); border: 1px solid rgba(25,113,194,0.2); }
+    .info-box.warning { background: var(--orange-light); border: 1px solid rgba(230,119,0,0.2); }
+    .info-box.success { background: var(--green-light); border: 1px solid rgba(47,158,68,0.2); }
+    .info-box.danger { background: var(--red-light); border: 1px solid rgba(201,42,42,0.2); }
+    .info-icon { font-size: 1.1em; flex-shrink: 0; }
+
+    /* Comparison table headers */
+    .comparison th:first-child { width: 35%; }
+
+    /* Grid */
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; margin-top: 12px; }
+    .grid-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+    .grid-item h4 { color: var(--accent); margin-bottom: 6px; font-size: 0.9em; }
+
+    /* FAQ */
+    .faq-item {
+      border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; overflow: hidden;
+    }
+    .faq-q {
+      padding: 12px 16px; cursor: pointer; background: var(--surface2);
+      font-size: 0.92em; transition: background 0.15s;
+    }
+    .faq-q:hover { background: #e9ecef; }
+    .faq-q .arrow { float: right; font-size: 0.7em; color: var(--muted); transition: transform 0.2s; }
+    .faq-item.open .faq-q .arrow { transform: rotate(180deg); }
+    .faq-a { display: none; padding: 12px 16px; background: var(--surface); border-top: 1px solid var(--border); font-size: 0.88em; }
+    .faq-item.open .faq-a { display: block; }
+    .faq-a p { margin-bottom: 8px; }
+    .faq-a p:last-child { margin-bottom: 0; }
+
+    /* Banner */
+    .hero-banner {
+      background: linear-gradient(135deg, rgba(25,113,194,0.05) 0%, rgba(112,72,232,0.05) 100%);
+      border: 1px solid rgba(25,113,194,0.15); border-radius: 10px;
+      padding: 20px; margin: 20px 0; text-align: center;
+    }
+    .hero-banner h3 { color: var(--accent); margin-bottom: 8px; }
+    .hero-banner p { color: var(--muted); font-size: 0.88em; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--border2); }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 30px 20px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85em;
+      background: var(--surface2);
+    }
+
+    @media (max-width: 600px) {
+      .site-header h1 { font-size: 1.4em; }
+      section h2 { font-size: 1.15em; }
+      pre { font-size: 0.8em; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════ HEADER -->
+<header class="site-header">
+  <h1>🛡️ Kali Linux 安装 Hermes Agent + Web UI</h1>
+  <p>从零开始在 Kali 上部署完整的 AI Agent 环境，带漂亮 Web 界面</p>
+  <div class="badge-row">
+    <span class="badge">🐉 Kali Linux</span>
+    <span class="badge">🤖 Hermes Agent</span>
+    <span class="badge">🌐 Open WebUI</span>
+    <span class="badge">🐳 Docker</span>
+    <span class="badge">📋 2025</span>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════ TOC -->
+<nav class="toc">
+  <div class="toc-inner">
+    <a href="#prereq">📋 前提条件</a>
+    <a href="#install">⚙️ 安装步骤</a>
+    <a href="#config">🔑 配置 API Key</a>
+    <a href="#model">🤖 选择模型</a>
+    <a href="#tools">🛠️ 工具集</a>
+    <a href="#verify">✅ 验证</a>
+    <a href="#common">📝 日常命令</a>
+    <a href="#upgrade">🔄 更新卸载</a>
+    <a href="#webui">🌐 Web UI</a>
+    <a href="#faq">❓ 常见问题</a>
+    <a href="#resources">🔗 参考资源</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════ MAIN -->
+<div class="container">
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 01 PREREQUISITES ━━━ -->
+<section id="prereq">
+  <h2><span class="num">01</span> 前提条件</h2>
+  <p class="section-desc">开始之前，确保系统满足基本要求</p>
+
+  <div class="info-box info">
+    <span class="info-icon">📌</span>
+    <div>
+      <p><strong>Hermes Agent 官方要求（实际比这宽松得多）：</strong></p>
+    </div>
+  </div>
+
+  <table class="comparison">
+    <thead>
+      <tr><th>项目</th><th>要求</th><th>Kali 默认</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>操作系统</td><td>Linux / macOS / WSL2</td><td>✅ Kali Linux（基于 Debian）</td></tr>
+      <tr><td>Python</td><td>3.10+</td><td>✅ <code>python3 --version</code></td></tr>
+      <tr><td>curl</td><td>最新版</td><td>✅ 已预装</td></tr>
+      <tr><td>git</td><td>最新版</td><td>✅ 已预装</td></tr>
+      <tr><td>网络</td><td>能访问模型 API</td><td>⚠️ 需科学上网（如需要）</td></tr>
+    </tbody>
+  </table>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">1</span>
+      <strong>检查系统版本</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+<pre><span class="prompt">$</span> <span class="cmd">cat /etc/os-release | grep -E "^(NAME|VERSION)="</span>
+<span class="output">NAME="Kali GNU/Linux"
+VERSION="2025.1"</span>
+
+<span class="prompt">$</span> <span class="cmd">python3 --version</span>
+<span class="output">Python 3.11.x</span>
+
+<span class="prompt">$</span> <span class="cmd">curl --version | head -1</span>
+<span class="output">curl 7.88.x</span></pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">2</span>
+      <strong>⚠️ 网络问题（可选）</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <p>如果访问 GitHub / 模型 API 速度慢或超时，Kali 上可以配置代理：</p>
+<pre><span class="prompt">$</span> <span class="cmd">export HTTP_PROXY=http://127.0.0.1:7890</span>
+<span class="prompt">$</span> <span class="cmd">export HTTPS_PROXY=http://127.0.0.1:7890</span>
+<span class="comment"># 验证是否生效：</span>
+<span class="prompt">$</span> <span class="cmd">curl -I https://github.com 2>&1 | head -3</span></pre>
+      <p>换成你实际使用的代理地址。API Key 配置完成后，也需要在调用模型时走代理。</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 02 INSTALL ━━━ -->
+<section id="install">
+  <h2><span class="num">02</span> 安装 Hermes Agent</h2>
+  <p class="section-desc">推荐方式，一键安装</p>
+
+  <div class="info-box success">
+    <span class="info-icon">✅</span>
+    <div>
+      <p><strong>官方一键安装脚本</strong>（推荐）—— 自动检测系统、安装依赖、配置 PATH，最省心</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">1</span>
+      <strong>方式一：一键安装脚本（推荐）</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+<pre><span class="prompt">$</span> <span class="cmd">curl -fsSL https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh | bash</span>
+</pre>
+      <p style="margin-top:10px">安装脚本会自动：</p>
+      <ul style="margin-left:20px; margin-top:6px">
+        <li>检测 Python 版本（需要 3.10+）</li>
+        <li>用 pip 安装 hermes-agent 包</li>
+        <li>下载 CLI 完成文件</li>
+        <li>把 <code>hermes</code> 添加到 <code>~/.local/bin</code> 并配置 PATH</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">2</span>
+      <strong>方式二：pip 直接安装</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+<pre><span class="prompt">$</span> <span class="cmd">pip install hermes-agent -U</span>
+<span class="comment"># 或者：</span>
+<span class="prompt">$</span> <span class="cmd">pip3 install hermes-agent -U</span>
+</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">3</span>
+      <strong>方式三：源码安装（开发者）</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+<pre><span class="prompt">$</span> <span class="cmd">git clone https://github.com/NousResearch/hermes-agent.git</span>
+<span class="prompt">$</span> <span class="cmd">cd hermes-agent && pip install -e .</span>
+</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">4</span>
+      <strong>🔧 解决 "hermes: command not found"</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <p>PATH 没配置好？手动修：</p>
+<pre><span class="prompt">$</span> <span class="cmd">echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc</span>
+<span class="prompt">$</span> <span class="cmd">source ~/.bashrc</span>
+<span class="prompt">$</span> <span class="cmd">which hermes</span>
+<span class="output">/home/kali/.local/bin/hermes</span></pre>
+      <div class="info-box warning">
+        <span class="info-icon">⚠️</span>
+        <div>
+          <p><strong>Kali 默认用户不是 root</strong>，所以安装路径在 <code>~/.local/bin</code> 而不是 <code>/usr/local/bin</code>。这不需要 sudo，是正确的。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 03 CONFIG ━━━ -->
+<section id="config">
+  <h2><span class="num">03</span> 配置 API Key</h2>
+  <p class="section-desc">让 Hermes 能调用 AI 模型</p>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">1</span>
+      <strong>获取 API Key</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <p>推荐使用 <strong>OpenRouter</strong>（一个聚合了几乎所有模型的网关）：</p>
+      <ul style="margin-left:20px; margin-top:6px">
+        <li>访问 <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a></li>
+        <li>注册/登录账号</li>
+        <li>点击 "Create Key"，复制生成的密钥（格式：sk-or-v1-xxxx）</li>
+      </ul>
+      <p style="margin-top:12px">也可以用其他 Provider：</p>
+      <table class="comparison">
+        <thead><tr><th>Provider</th><th>官网</th><th>免费额度</th></tr></thead>
+        <tbody>
+          <tr><td>OpenRouter</td><td>openrouter.ai</td><td>少量免费积分，新用户 $5</td></tr>
+          <tr><td>OpenAI</td><td>platform.openai.com</td><td>$5 新用户积分</td></tr>
+          <tr><td>Anthropic</td><td>console.anthropic.com</td><td>$5 新用户积分</td></tr>
+          <tr><td>DeepSeek</td><td>platform.deepseek.com</td><td>免费额度充足</td></tr>
+          <tr><td>Groq</td><td>console.groq.com</td><td>免费，速度快</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">2</span>
+      <strong>配置 Key（交互式向导）</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+<pre><span class="prompt">$</span> <span class="cmd">hermes setup</span>
+<span class="output">Welcome to Hermes Agent setup!
+
+What would you like to configure?
+  [1] Model & Provider
+  [2] Terminal settings
+  [3] Gateway settings
+  [4] Tools
+  [5] Agent settings
+  [6] All of the above
+
+Select option:</span>
+<span class="comment"># 输入 1，然后输入你的 OpenRouter API Key</span>
+</pre>
+      <div class="info-box info">
+        <span class="info-icon">💡</span>
+        <div>
+          <p><strong>自动路由：</strong> <code>hermes config set</code> 会自动把密钥放到 <code>~/.hermes/.env</code>，把开关放到 <code>~/.hermes/config.yaml</code>，不需要手动编辑。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">3</span>
+      <strong>手动配置（备选）</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+<pre><span class="prompt">$</span> <span class="cmd">echo 'OPENROUTER_API_KEY=sk-or-v1-your-key-here' >> ~/.hermes/.env</span>
+<span class="prompt">$</span> <span class="cmd">hermes config set model.provider openrouter</span>
+<span class="prompt">$</span> <span class="cmd">cat ~/.hermes/.env</span>
+<span class="output">OPENROUTER_API_KEY=sk-or-v1-your-key-here</span></pre>
+    </div>
+  </div>
+</section>
+
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 04 MODEL ━━━ -->
+<section id="model">
+  <h2><span class="num">04</span> 选择模型</h2>
+  <p class="section-desc">指定用哪个 AI 模型</p>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">1</span>
+      <strong>交互式选择</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+<pre><span class="prompt">$</span> <span class="cmd">hermes model</span>
+<span class="output">Select a provider: [openrouter]</span>
+<span class="comment"># 选择 provider 后，会列出可用模型</span>
+<span class="output">Select a model:
+  [1] anthropic/claude-sonnet-4
+  [2] openai/gpt-4o
+  [3] deepseek/deepseek-chat-v3
+  [4] google/gemini-2.5-pro
+  ...</span>
+</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">2</span>
+      <strong>命令行直接指定</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+<pre><span class="prompt">$</span> <span class="cmd">hermes config set model.default anthropic/claude-sonnet-4</span>
+<span class="comment"># 或单次指定：</span>
+<span class="prompt">$</span> <span class="cmd">hermes chat -m deepseek/deepseek-chat-v3 -q "你好"</span>
+</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">3</span>
+      <strong>推荐模型对比</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <table class="comparison">
+        <thead><tr><th>模型</th><th>特点</th><th>适合场景</th></tr></thead>
+        <tbody>
+          <tr><td>claude-sonnet-4</td><td>最强综合能力，工具调用优秀</td><td>复杂任务、代码、推理</td></tr>
+          <tr><td>gpt-4o</td><td>多模态强，生态完善</td><td>通用任务</td></tr>
+          <tr><td>deepseek-chat-v3</td><td>性价比高，推理能力强</td><td>日常对话、代码</td></tr>
+          <tr><td>gemini-2.5-pro</td><td>长上下文强（100万 token）</td><td>大项目分析</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:10px; font-size:0.85em; color:var(--muted)">在 OpenRouter 上可以按需切换模型，有些模型有免费额度。</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 05 TOOLS ━━━ -->
+<section id="tools">
+  <h2><span class="num">05</span> 工具集配置</h2>
+  <p class="section-desc">让 Agent 能执行 Shell 命令、读写文件、搜索网页等</p>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">1</span>
+      <strong>查看可用工具集</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+<pre><span class="prompt">$</span> <span class="cmd">hermes tools list</span>
+<span class="output">┌────────────────┬──────────────────────────────────┐
+│ Toolset        │ Description                      │
+├────────────────┼──────────────────────────────────┤
+│ terminal       │ Shell commands & process mgmt    │
+│ file           │ File read/write/search/patch     │
+│ web            │ Web search & content extraction  │
+│ browser        │ Browser automation               │
+│ code_execution │ Sandboxed Python execution       │
+│ vision         │ Image analysis                   │
+│ image_gen      │ AI image generation              │
+│ skills         │ Skill browsing & management      │
+│ memory         │ Persistent cross-session memory │
+│ delegation     │ Subagent task delegation         │
+│ cronjob        │ Scheduled task management        │
+│ ...            │ ...                              │
+└────────────────┴──────────────────────────────────┘</span>
+</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">2</span>
+      <strong>启用/禁用工具（交互式）</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+<pre><span class="prompt">$</span> <span class="cmd">hermes tools</span>
+<span class="comment"># 打开交互式界面，用方向键切换，回车启用/禁用</span>
+</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">3</span>
+      <strong>命令行快速操作</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+<pre><span class="prompt">$</span> <span class="cmd">hermes tools enable terminal,file,web,search</span>
+<span class="prompt">$</span> <span class="cmd">hermes tools disable browser,image_gen  # 关闭不需要的</span>
+</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">4</span>
+      <strong>🛡️ Kali 渗透测试推荐配置</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <p>在 Kali 上，工具集建议这样配置：</p>
+<pre><span class="prompt">$</span> <span class="cmd">hermes tools enable terminal,file,web,search</span>
+<span class="comment"># 核心必需：terminal（执行命令）+ file（读写文件）+ web（搜索文档）</span>
+<span class="comment"># Kali 特色：可以让 Agent 帮你调用 nmap、metasploit 等</span>
+</pre>
+      <div class="info-box warning">
+        <span class="info-icon">⚠️</span>
+        <div>
+          <p><strong>安全提示：</strong> 开启 <code>terminal</code> 意味着 Agent 可以执行任意 Shell 命令。新手建议先用 <code>hermes --yolo</code> 临时绕过确认，或配置 <code>hermes config set approvals.mode smart</code> 智能审批低风险命令。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 06 VERIFY ━━━ -->
+<section id="verify">
+  <h2><span class="num">06</span> 验证安装</h2>
+  <p class="section-desc">确认一切正常</p>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">1</span>
+      <strong>健康检查</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+<pre><span class="prompt">$</span> <span class="cmd">hermes doctor</span>
+<span class="output">✅ Python version: 3.11.x
+✅ hermes-agent installed: v2.x.x
+✅ Config file exists: /home/kali/.hermes/config.yaml
+✅ API key configured
+✅ Tools enabled: terminal, file, web
+✅ Network: can reach openrouter.ai
+
+Everything looks good! 🚀</span>
+</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">2</span>
+      <strong>首次对话测试</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+<pre><span class="prompt">$</span> <span class="cmd">hermes chat -q "Hello, 你是谁？"</span>
+<span class="output">你好！我是 Hermes Agent，由 Nous Research 构建的 AI 助手。
+我可以帮你完成各种任务，包括：
+- 编写和调试代码
+- 执行 Shell 命令
+- 搜索和分析信息
+- 以及更多...
+
+有什么我可以帮你的吗？</span>
+</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">3</span>
+      <strong>交互模式</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+<pre><span class="prompt">$</span> <span class="cmd">hermes</span>
+<span class="output">  Hermes Agent v2.x.x
+
+  Type /help for commands, /quit to exit
+
+  You: </span>
+<span class="output">  你: 帮我写一个端口扫描脚本</span>
+<span class="comment"># Agent 开始工作，调用工具完成你的请求</span>
+</pre>
+    </div>
+  </div>
+</section>
+
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 07 COMMON COMMANDS ━━━ -->
+<section id="common">
+  <h2><span class="num">07</span> 日常使用命令速查</h2>
+  <p class="section-desc">最常用的命令一张表搞定</p>
+
+  <table class="comparison">
+    <thead><tr><th>场景</th><th>命令</th></tr></thead>
+    <tbody>
+      <tr><td>交互式对话</td><td><code>hermes</code></td></tr>
+      <tr><td>单次问答</td><td><code>hermes chat -q "你的问题"</code></td></tr>
+      <tr><td>查看配置</td><td><code>hermes config</code></td></tr>
+      <tr><td>编辑配置</td><td><code>hermes config edit</code></td></tr>
+      <tr><td>切换模型</td><td><code>hermes model</code></td></tr>
+      <tr><td>管理工具集</td><td><code>hermes tools</code></td></tr>
+      <tr><td>启动 Gateway</td><td><code>hermes gateway</code></td></tr>
+      <tr><td>安装 Skills</td><td><code>hermes skills install &lt;skill-id&gt;</code></td></tr>
+      <tr><td>健康检查</td><td><code>hermes doctor</code></td></tr>
+      <tr><td>查看会话</td><td><code>hermes sessions list</code></td></tr>
+      <tr><td>继续上次对话</td><td><code>hermes --continue</code></td></tr>
+      <tr><td>后台运行</td><td><code>hermes gateway start</code></td></tr>
+      <tr><td>更新 Hermes</td><td><code>hermes update</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="info-box info" style="margin-top:16px">
+    <span class="info-icon">💡</span>
+    <div>
+      <p><strong>Slash 命令</strong>（在对话中输入）：<code>/new</code> 新会话 &nbsp; <code>/clear</code> 清屏 &nbsp; <code>/model</code> 换模型 &nbsp; <code>/tools</code> 工具管理 &nbsp; <code>/quit</code> 退出</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 08 UPGRADE ━━━ -->
+<section id="upgrade">
+  <h2><span class="num">08</span> 🔄 更新与卸载</h2>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">1</span>
+      <strong>更新 Hermes Agent</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+<pre><span class="prompt">$</span> <span class="cmd">hermes update</span>
+<span class="output">Downloading hermes-agent v2.x.x ...
+✅ Updated successfully to v2.x.x</span>
+<span class="comment"># 或者用 pip：</span>
+<span class="prompt">$</span> <span class="cmd">pip install hermes-agent -U</span>
+</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">2</span>
+      <strong>卸载</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+<pre><span class="prompt">$</span> <span class="cmd">pip uninstall hermes-agent</span>
+<span class="prompt">$</span> <span class="cmd">rm -rf ~/.hermes  # 可选：删除配置和数据</span>
+</pre>
+      <div class="info-box warning">
+        <span class="info-icon">⚠️</span>
+        <div>
+          <p><code>~/.hermes</code> 里包含你的所有配置、API Key、Skills 和会话历史。删除前建议确认不需要了。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 09 WEB UI ━━━ -->
+<section id="webui">
+  <h2><span class="num">09</span> 🌐 配置 Web UI（Open WebUI）</h2>
+  <p class="section-desc">通过浏览器界面与 Hermes Agent 交互，界面类似你现在看到的这个页面</p>
+
+  <div class="info-box info">
+    <span class="info-icon">💡</span>
+    <div>
+      <p><strong>原理说明：</strong> Hermes Agent 内置了一个 <strong>OpenAI 兼容的 API Server</strong>（端口 8642）。任何兼容 OpenAI 格式的前端都可以连接它。<strong>Open WebUI</strong>（GitHub 126k ⭐）是最流行的自托管 AI 聊天界面，Docker 一键部署，把 Hermes Agent 当作后端大脑来用。</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">1</span>
+      <strong>🏗️ 架构说明</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <p>数据流向：</p>
+<pre><span class="comment">┌──────────────────────────────────────────────────────────┐
+│                                                          │
+│   你（浏览器）──port 3000──▶  Open WebUI（Docker）        │
+│                                       │                  │
+│                                       │ http://host.docker│
+│                                       │ .internal:8642/v1 │
+│                                       ▼                  │
+│                              ┌─────────────────────┐      │
+│                              │  Hermes Agent       │      │
+│                              │  Gateway + API Server│      │
+│                              │      :8642           │      │
+│                              └─────────────────────┘      │
+│                                       │                  │
+│                              调用工具：terminal / file /  │
+│                              web / memory / skills / MCP  │
+└──────────────────────────────────────────────────────────┘</span>
+</pre>
+      <p>Open WebUI 负责渲染漂亮的聊天界面，Hermes Agent 负责大脑逻辑（执行命令、读写文件、搜索等），两者通过 <code>/v1/chat/completions</code> API 通信。</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">2</span>
+      <strong>🚀 启用 Hermes API Server</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <p>API Server 是 Hermes 的 HTTP 接口，Open WebUI 通过它调用 Agent。两行命令搞定：</p>
+<pre><span class="prompt">$</span> <span class="cmd">hermes config set API_SERVER_ENABLED true</span>
+<span class="prompt">$</span> <span class="cmd">hermes config set API_SERVER_KEY my-kali-secret</span>
+
+<span class="comment"># 如果 Gateway 已在运行，重启使配置生效：</span>
+<span class="prompt">$</span> <span class="cmd">hermes gateway stop && hermes gateway</span>
+</pre>
+      <div class="info-box info" style="margin-top:12px">
+        <span class="info-icon">💡</span>
+        <div>
+          <p><code>hermes config set</code> 自动把开关写到 <code>config.yaml</code>，把密钥写到 <code>~/.hermes/.env</code>。</p>
+        </div>
+      </div>
+      <p style="margin-top:16px">启动后应该看到：</p>
+<pre><span class="output">[API Server] API server listening on http://127.0.0.1:8642</span>
+</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">3</span>
+      <strong>🔍 验证 API Server 正常</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+<pre><span class="comment"># 健康检查</span>
+<span class="prompt">$</span> <span class="cmd">curl -s http://127.0.0.1:8642/health</span>
+<span class="output">{"status":"ok",...}</span>
+
+<span class="comment"># 查看可用模型</span>
+<span class="prompt">$</span> <span class="cmd">curl -s -H "Authorization: Bearer my-kali-secret" \
+  http://127.0.0.1:8642/v1/models</span>
+<span class="output">{"object":"list","data":[{"id":"hermes-agent",...}]}</span>
+</pre>
+      <p>两条都有正常返回 → API Server 就绪！</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">4</span>
+      <strong>🐳 安装 Docker（如未安装）</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <p>Open WebUI 通过 Docker 运行，Kali 上先装 Docker：</p>
+<pre><span class="prompt">$</span> <span class="cmd">sudo apt update && sudo apt install -y docker.io</span>
+<span class="prompt">$</span> <span class="cmd">sudo systemctl enable docker</span>
+<span class="prompt">$</span> <span class="cmd">sudo systemctl start docker</span>
+<span class="comment"># 把当前用户加入 docker 组（免 sudo 运行 docker）：</span>
+<span class="prompt">$</span> <span class="cmd">sudo usermod -aG docker $USER && newgrp docker</span>
+<span class="comment"># 验证：</span>
+<span class="prompt">$</span> <span class="cmd">docker --version</span>
+<span class="output">Docker version 24.x.x</span>
+</pre>
+      <div class="info-box warning">
+        <span class="info-icon">⚠️</span>
+        <div>
+          <p>加入 docker 组后<strong>需要重新登录终端</strong>（或运行 <code>newgrp docker</code>）才能生效。Kali 2025 默认用户已经是 sudo 成员，所以这里不需要 root。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">5</span>
+      <strong>🐳 启动 Open WebUI（Docker 一条命令）</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <p>在 Kali 终端运行这条命令：</p>
+<pre><span class="prompt">$</span> <span class="cmd">docker run -d \
+  --name open-webui \
+  --restart always \
+  -p 3000:8080 \
+  -e OPENAI_API_BASE_URL=http://host.docker.internal:8642/v1 \
+  -e OPENAI_API_KEY=my-kali-secret \
+  -e ENABLE_OLLAMA_API=false \
+  --add-host=host.docker.internal:host-gateway \
+  -v open-webui-data:/app/backend/data \
+  ghcr.io/open-webui/open-webui:main</span>
+</pre>
+      <div class="info-box info" style="margin-top:12px">
+        <span class="info-icon">💡</span>
+        <div>
+          <p><strong>参数说明：</strong></p>
+          <ul style="margin-left:20px; margin-top:6px">
+            <li><code>--add-host=host.docker.internal:host-gateway</code> — Docker 容器内部访问宿主机端口的关键！</li>
+            <li><code>ENABLE_OLLAMA_API=false</code> — 禁用默认 Ollama 后端，避免模型选择器出现空列表</li>
+            <li><code>-v open-webui-data:/app/backend/data</code> — 持久化存储（用户账号、聊天记录）</li>
+            <li><code>--restart always</code> — 开机自启</li>
+          </ul>
+        </div>
+      </div>
+      <p style="margin-top:12px">首次启动需要 15-30 秒下载 embedding 模型，查看进度：</p>
+<pre><span class="prompt">$</span> <span class="cmd">docker logs -f open-webui</span>
+<span class="comment"># 看到以下内容后表示启动完成：</span>
+<span class="output">Uvicorn running on http://0.0.0.0:8080</span>
+</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">6</span>
+      <strong>📄 Docker Compose 方式（推荐永久部署）</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <p>创建 <code>~/hermes-web/docker-compose.yml</code>：</p>
+<pre><span class="keyword">services</span>:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    <span class="keyword">restart</span>: always
+    ports:
+      - <span class="string">"3000:8080"</span>
+    environment:
+      - OPENAI_API_BASE_URL=http://host.docker.internal:8642/v1
+      - OPENAI_API_KEY=my-kali-secret
+      - ENABLE_OLLAMA_API=false
+    extra_hosts:
+      - <span class="string">"host.docker.internal:host-gateway"</span>
+    volumes:
+      - open-webui-data:/app/backend/data
+
+<span class="keyword">volumes</span>:
+  open-webui-data:
+</pre>
+<pre><span class="prompt">$</span> <span class="cmd">mkdir -p ~/hermes-web && cd ~/hermes-web</span>
+<span class="prompt">$</span> <span class="cmd">nano docker-compose.yml  # 粘贴上面的内容</span>
+<span class="prompt">$</span> <span class="cmd">docker compose up -d</span>
+<span class="comment"># 以后重启也只需要：</span>
+<span class="prompt">$</span> <span class="cmd">docker compose up -d</span>
+</pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">7</span>
+      <strong>🌍 访问 Web UI</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <p>在浏览器中打开：</p>
+<pre><span class="prompt">→</span> 打开浏览器访问：<span class="highlight">http://localhost:3000</span>
+</pre>
+      <div class="info-box success">
+        <span class="info-icon">✅</span>
+        <div>
+          <p>首次访问会要求注册管理员账号——<strong>第一个注册的用户自动成为管理员</strong>。登录后在模型下拉菜单中选择 <code>hermes-agent</code>，开始聊天！</p>
+        </div>
+      </div>
+      <p style="margin-top:16px"><strong>从其他机器访问：</strong> 把 <code>localhost</code> 换成 Kali 的 IP（如 <code>http://192.168.1.100:3000</code>）。</p>
+      <p><strong>外网访问：</strong> 需要配置反向代理（Nginx/Caddy）和 HTTPS，参考 <a href="https://openwebui.com/docs/" target="_blank">openwebui.com/docs</a>。</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">8</span>
+      <strong>🛡️ Kali 特殊注意事项</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <table class="comparison">
+        <thead><tr><th>问题</th><th>解决方案</th></tr></thead>
+        <tbody>
+          <tr><td>Docker daemon 未启动</td><td><code>sudo systemctl start docker</code></td></tr>
+          <tr><td>普通用户无法运行 docker</td><td><code>sudo usermod -aG docker $USER && newgrp docker</code></td></tr>
+          <tr><td>docker-compose 太旧</td><td><code>sudo apt install docker-compose-v2</code> 或用内置的 <code>docker compose</code>（v2）</td></tr>
+          <tr><td>端口 3000 被占用</td><td>改端口：<code>-p 8080:8080</code>，访问 <code>http://localhost:8080</code></td></tr>
+          <tr><td>内存不足（Open WebUI 需要 ~4GB）</td><td>给 VM 分配更多内存，或 <code>--memory=4g</code> 限制 Docker</td></tr>
+          <tr><td>host.docker.internal 不解析</td><td>确认命令里加了 <code>--add-host=host.docker.internal:host-gateway</code></td></tr>
+          <tr><td>想从宿主机访问 Docker 内的 Hermes</td><td>先 <code>hermes gateway</code> 在宿主机上跑起来，容器通过 host.docker.internal 访问</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">9</span>
+      <strong>👥 多用户配置（Profiles）</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <p>给不同用户分配独立的 Agent 实例（独立配置、记忆、技能）：</p>
+<pre><span class="comment"># 创建两个独立实例</span>
+<span class="prompt">$</span> <span class="cmd">hermes profile create alice</span>
+<span class="prompt">$</span> <span class="cmd">hermes -p alice config set API_SERVER_ENABLED true</span>
+<span class="prompt">$</span> <span class="cmd">hermes -p alice config set API_SERVER_PORT 8643</span>
+<span class="prompt">$</span> <span class="cmd">hermes -p alice config set API_SERVER_KEY alice-secret</span>
+
+<span class="prompt">$</span> <span class="cmd">hermes profile create bob</span>
+<span class="prompt">$</span> <span class="cmd">hermes -p bob config set API_SERVER_ENABLED true</span>
+<span class="prompt">$</span> <span class="cmd">hermes -p bob config set API_SERVER_PORT 8644</span>
+<span class="prompt">$</span> <span class="cmd">hermes -p bob config set API_SERVER_KEY bob-secret</span>
+
+<span class="comment"># 启动两个 Gateway</span>
+<span class="prompt">$</span> <span class="cmd">hermes -p alice gateway &</span>
+<span class="prompt">$</span> <span class="cmd">hermes -p bob gateway &</span>
+</pre>
+      <p>然后在 Open WebUI 的 <strong>Admin Settings → Connections</strong> 中分别添加两个连接，模型下拉菜单里就能看到 alice 和 bob 两个独立 Agent。</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-header" onclick="toggle(this)">
+      <span class="step-num">10</span>
+      <strong>🔧 排查问题</strong>
+      <span class="arrow">▼</span>
+    </div>
+    <div class="step-body">
+      <table class="comparison">
+        <thead><tr><th>症状</th><th>检查项 / 解决方案</th></tr></thead>
+        <tbody>
+          <tr><td>模型下拉菜单为空</td><td>确认 API URL 末尾有 <code>/v1</code> 后缀，运行 <code>curl http://localhost:8642/health</code> 确认连通</td></tr>
+          <tr><td>Invalid API key</td><td>Open WebUI 的 API Key 必须与 <code>API_SERVER_KEY</code> 完全一致</td></tr>
+          <tr><td>响应很慢</td><td>正常！Hermes 在执行工具（读文件、搜网页、跑命令）后才返回最终回答</td></tr>
+          <tr><td>Open WebUI 502 / 连接失败</td><td>确认 Hermes Gateway 在运行：另开终端运行 <code>hermes gateway</code></td></tr>
+          <tr><td>端口 3000 被占用</td><td><code>sudo netstat -tlnp | grep 3000</code> 查进程，改用其他端口</td></tr>
+          <tr><td>embedding 模型下载失败</td><td><code>docker logs open-webui</code> 查看错误，国内可能需要镜像加速</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10 FAQ ━━━ -->
+<section id="faq">
+  <h2><span class="num">10</span> ❓ 常见问题</h2>
+  <p class="section-desc">FAQ</p>
+
+  <div class="faq-item" onclick="faqToggle(this)">
+    <div class="faq-q">Q: 安装需要 root/sudo 吗？<span class="arrow">▼</span></div>
+    <div class="faq-a">
+      <p><strong>不需要。</strong> Hermes 安装在用户目录 (<code>~/.local/bin</code>)，配置文件在 <code>~/.hermes/</code>。Docker 部分需要 sudo 安装 docker.io，但日常运行不需要。</p>
+    </div>
+  </div>
+
+  <div class="faq-item" onclick="faqToggle(this)">
+    <div class="faq-q">Q: Hermes 可以调用 Kali 工具（Nmap、Metasploit 等）吗？<span class="arrow">▼</span></div>
+    <div class="faq-a">
+      <p>可以！通过 <code>terminal</code> 工具集直接调用任何命令行工具：<code>nmap -sV target.com</code>。也可以通过 MCP 接口连接 Nmap、Metasploit 等已有 MCP 服务器。</p>
+    </div>
+  </div>
+
+  <div class="faq-item" onclick="faqToggle(this)">
+    <div class="faq-q">Q: Kali 在虚拟机中运行，Hermes 可以吗？<span class="arrow">▼</span></div>
+    <div class="faq-a">
+      <p>可以。VMware、VirtualBox、WSL2 中的 Kali 都可以。唯一要求是网络连通性（能访问模型提供商的 API）。如果网络受限，可以配置本地模型通过 <code>llama.cpp</code> 运行。</p>
+    </div>
+  </div>
+
+  <div class="faq-item" onclick="faqToggle(this)">
+    <div class="faq-q">Q: Hermes 能完全替代命令行操作吗？<span class="arrow">▼</span></div>
+    <div class="faq-a">
+      <p>大部分场景可以。它可以执行任意 Shell 命令、读写文件、搜索网页、写代码并运行测试。但它不是渗透测试工具的替代品——它是<strong>帮你更高效使用这些工具</strong>的助手。</p>
+    </div>
+  </div>
+
+  <div class="faq-item" onclick="faqToggle(this)">
+    <div class="faq-q">Q: 如何排查问题？<span class="arrow">▼</span></div>
+    <div class="faq-a">
+<pre><span class="prompt">$</span> <span class="cmd">hermes doctor --fix</span>
+<span class="prompt">$</span> <span class="cmd">tail -50 ~/.hermes/logs/gateway.log</span>
+<span class="prompt">$</span> <span class="cmd">grep -i error ~/.hermes/logs/gateway.log | tail -20</span>
+</pre>
+    </div>
+  </div>
+
+  <div class="faq-item" onclick="faqToggle(this)">
+    <div class="faq-q">Q: 能用本地模型（Ollama）吗？<span class="arrow">▼</span></div>
+    <div class="faq-a">
+      <p>可以！通过自定义 Provider 端点配置 Ollama：</p>
+<pre><span class="prompt">$</span> <span class="cmd">hermes config set model.provider custom</span>
+<span class="prompt">$</span> <span class="cmd">hermes config set model.base_url http://localhost:11434/v1</span>
+<span class="prompt">$</span> <span class="cmd">hermes config set model.api_key ollama</span>
+<span class="prompt">$</span> <span class="cmd">hermes model llama3.2</span>
+</pre>
+    </div>
+  </div>
+
+  <div class="faq-item" onclick="faqToggle(this)">
+    <div class="faq-q">Q: Web UI 和命令行有什么区别？<span class="arrow">▼</span></div>
+    <div class="faq-a">
+      <p>功能完全一样！Web UI（Open WebUI）只是换了一个漂亮的浏览器界面，背后调用的是同一个 Hermes Agent，工具集、记忆、技能都是共享的。适合不想用终端、喜欢图形界面的人。</p>
+    </div>
+  </div>
+
+  <div class="faq-item" onclick="faqToggle(this)">
+    <div class="faq-q">Q: Open WebUI 首次启动很慢怎么办？<span class="arrow">▼</span></div>
+    <div class="faq-a">
+      <p>首次启动需要下载 embedding 模型（约 150MB）。如果网络慢，可以：<br>1. 配置代理：<code>export HTTP_PROXY=...</code> 再运行 docker<br>2. 手动 pull：<code>docker pull ghcr.io/open-webui/open-webui:main</code><br>查看下载进度：<code>docker logs -f open-webui</code></p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 11 RESOURCES ━━━ -->
+<section id="resources">
+  <h2><span class="num">11</span> 🔗 参考资源</h2>
+
+  <ul style="list-style:none; margin-top:8px">
+    <li style="margin-bottom:10px">📄 <strong>官方文档：</strong> <a href="https://hermes-agent.nousresearch.com/docs/" target="_blank">hermes-agent.nousresearch.com/docs</a></li>
+    <li style="margin-bottom:10px">🐙 <strong>GitHub 仓库：</strong> <a href="https://github.com/NousResearch/hermes-agent" target="_blank">github.com/NousResearch/hermes-agent</a></li>
+    <li style="margin-bottom:10px">📦 <strong>安装脚本：</strong> <a href="https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh" target="_blank">install.sh</a></li>
+    <li style="margin-bottom:10px">🧩 <strong>Skills 目录：</strong> <a href="https://hermes-agent.nousresearch.com/docs/reference/skills-catalog" target="_blank">Skills Catalog</a></li>
+    <li style="margin-bottom:10px">🔌 <strong>MCP 集成：</strong> <a href="https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp" target="_blank">MCP Guide</a></li>
+    <li style="margin-bottom:10px">🌐 <strong>Open WebUI：</strong> <a href="https://openwebui.com/" target="_blank">openwebui.com</a> &nbsp;|&nbsp; <a href="https://github.com/open-webui/open-webui" target="_blank">GitHub</a></li>
+    <li style="margin-bottom:10px">💬 <strong>Messaging Platforms：</strong> <a href="https://hermes-agent.nousresearch.com/docs/user-guide/messaging/" target="_blank">Telegram / Discord / Slack 等</a></li>
+    <li style="margin-bottom:10px">🔑 <strong>Provider 配置：</strong> <a href="https://hermes-agent.nousresearch.com/docs/integrations/providers" target="_blank">Providers Guide</a></li>
+    <li style="margin-bottom:10px">⚙️ <strong>完整 CLI 参考：</strong> <a href="https://hermes-agent.nousresearch.com/docs/reference/cli-commands" target="_blank">CLI Commands</a></li>
+  </ul>
+</section>
+
+</div><!-- /container -->
+
+<!-- ═══════════════════════════════════════════════ FOOTER -->
+<footer>
+  <p>Hermes Agent × Kali Linux &mdash; Built with ❤️ by Hermes Agent</p>
+  <p style="margin-top:6px">文档版本: 2025-05 &bull; Hermes Agent v2.x &bull; Open WebUI</p>
+</footer>
+
+<!-- ═══════════════════════════════════════════════ SCRIPTS -->
+<script>
+  function toggle(el) {
+    var body = el.nextElementSibling;
+    body.classList.toggle('open');
+  }
+
+  function faqToggle(el) {
+    el.classList.toggle('open');
+  }
+
+  // TOC active state
+  const sections = document.querySelectorAll('section[id]');
+  const tocLinks = document.querySelectorAll('.toc a');
+
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(sec => {
+      const rect = sec.getBoundingClientRect();
+      if (rect.top <= 120) current = sec.getAttribute('id');
+    });
+    tocLinks.forEach(link => {
+      link.classList.remove('active');
+      if (link.getAttribute('href') === '#' + current) {
+        link.classList.add('active');
+      }
+    });
+  });
+
+  // Copy button
+  document.querySelectorAll('pre').forEach(pre => {
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.textContent = 'Copy';
+    btn.onclick = () => {
+      const code = pre.querySelector('code') ? pre.querySelector('code').textContent : pre.textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Copy', 1500);
+      });
+    };
+    pre.style.position = 'relative';
+    pre.appendChild(btn);
+  });
+</script>
+
+</body>
+</html>
